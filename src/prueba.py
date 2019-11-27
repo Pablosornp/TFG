@@ -1,24 +1,42 @@
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation
-from keras.optimizers import SGD
 
+
+import matplotlib.pyplot as plt
+import numpy as np
 from numpy import genfromtxt
 
-X_train = genfromtxt('Datos_prueba/x_train_1min_dh6_600.csv', delimiter=';')
-Y_train = genfromtxt('Datos_prueba/y_train_1min_dh6_600.csv', delimiter=';')
+import tensorflow as tf
 
-print(X_train)
+def mae(actual: np.ndarray, predicted: np.ndarray):
+    """ Mean Absolute Error """
+    return np.mean(np.abs(actual - predicted))
 
-model = Sequential([
-    Dense(9, input_shape=(9,), activation='tanh'), #Numero de neuronas, tamaño datos entrada, activacion
-    Dense(16, activation='tanh'),
-    Dense(1, activation='relu')
-])
+def plot_series(time, series, format="-", start=0, end=None):
+    plt.plot(time[start:end], series[start:end], format)
+    plt.xlabel("Time")
+    plt.ylabel("Value")
+    plt.grid(True)
 
-model.summary()
+y_series = genfromtxt('Datos_prueba/y_train_1min_dh6_600.csv', delimiter=';')
 
-sgd = SGD(lr=.001)
-model.compile(loss='mean_squared_error', optimizer=sgd, metrics=['mse'])
+total_time = y_series.shape[0]
+split_time = int(total_time*(2/3))
 
-history = model.fit(X_train, Y_train, batch_size=1, validation_split=0.2 ,epochs=100, shuffle=False, verbose=2) #entrenar la red #validar
+time = np.arange(total_time, dtype="float32")
+time_train = time[:split_time]
+time_valid = time[split_time:]
+
+y_test = y_series[split_time:]
+
+predictions = genfromtxt('Predictions/predictions.csv', delimiter=';')
+print(predictions.shape)
+print(y_test.shape)
+
+plt.figure(figsize=(10, 6))
+
+plot_series(time_valid, y_test)
+plot_series(time_valid, predictions)
+
+print(mae(y_test, predictions))
+print(y_test)
+print(predictions)
+plt.show()
