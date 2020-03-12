@@ -9,7 +9,7 @@ from matplotlib.pyplot import plot
 
 import numpy as np
 from numpy import genfromtxt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 
 import tensorflow as tf
@@ -23,8 +23,12 @@ start_time = time.time()
 x_series = genfromtxt('Datos_prueba/x_train_1min_dh6_100000.csv', delimiter=';')
 y_series = genfromtxt('Datos_prueba/y_train_1min_dh6_100000.csv', delimiter=';')
 
-#print(x_series.shape)
-#print(y_series.shape)
+scaler1 = MinMaxScaler(feature_range=(0,1))
+scaler2 = MinMaxScaler(feature_range=(0,1))
+scaler1.fit(x_series)
+scaler2.fit(y_series.reshape(-1,1))
+x_series_norm=scaler1.transform(x_series)
+y_series_norm=scaler2.transform(y_series.reshape(-1,1))
 
 total_time = x_series.shape[0]
 split_time = int(total_time*(9/10))
@@ -33,8 +37,8 @@ time_series = np.arange(total_time, dtype="float32")
 time_train = time_series[:split_time]
 time_valid = time_series[split_time:]
 
-x_train = x_series[:split_time]
-y_train = y_series[:split_time]
+x_train = x_series_norm[:split_time]
+y_train = y_series_norm[:split_time]
 
 x_test = x_series[split_time:]
 y_test = y_series[split_time:]
@@ -49,9 +53,9 @@ neurons_hidden_layer1=16
 loss_function='mae'
 
 model = Sequential([
-    Dense(9, input_shape=[window_size], activation='relu'), #Numero de neuronas, tamaño datos entrada, activacion
-    Dense(neurons_hidden_layer1, activation='relu'),
-    Dense(1, activation='relu')
+    Dense(9, input_shape=[window_size], activation='sigmoid'), #Numero de neuronas, tamaño datos entrada, activacion
+    Dense(neurons_hidden_layer1, activation='sigmoid'),
+    Dense(1, activation='sigmoid')
 ])
 
 #model.summary()
@@ -70,7 +74,7 @@ history = model.fit(x_train, y_train, batch_size=batch, validation_split=0.2 ,ep
 predictions = model.predict(x_test, verbose=0)
 #print(f"Predictions size = {predictions.shape}")
 #print(f"Actual_values size = {y_test.shape}")
-np.savetxt("Predictions/predictionsFC.csv", predictions, delimiter=";")
+np.savetxt("Predictions/predictionsFC_norm.csv", predictions, delimiter=";")
 
 #Mostrar gráfico con la evolución del coste para cada epoch
 epochs=np.arange(number_epochs)

@@ -1,6 +1,6 @@
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, Lambda, SimpleRNN
 from keras.optimizers import SGD
 from keras.utils import plot_model
 
@@ -9,20 +9,17 @@ from matplotlib.pyplot import plot
 
 import numpy as np
 from numpy import genfromtxt
-from sklearn.preprocessing import StandardScaler
-
 
 import tensorflow as tf
 import datetime
 import time
 
-keras.backend.clear_session()
+tf.keras.backend.clear_session()
 
 start_time = time.time()
 
 x_series = genfromtxt('Datos_prueba/x_train_1min_dh6_100000.csv', delimiter=';')
 y_series = genfromtxt('Datos_prueba/y_train_1min_dh6_100000.csv', delimiter=';')
-
 #print(x_series.shape)
 #print(y_series.shape)
 
@@ -41,36 +38,27 @@ y_test = y_series[split_time:]
 
 window_size=x_train.shape[1]
 
-number_epochs = 300
-learning_rate=0.001
-batch=100
-neurons_hidden_layer1=16
-
-loss_function='mae'
+number_epochs = 100
+learning_rate=0.01
 
 model = Sequential([
-    Dense(9, input_shape=[window_size], activation='relu'), #Numero de neuronas, tamaño datos entrada, activacion
-    Dense(neurons_hidden_layer1, activation='relu'),
-    Dense(1, activation='relu')
+  Lambda(lambda x: tf.expand_dims(x, axis=-1),input_shape=[None]),
+  #SimpleRNN(20, activation='relu' ,return_sequences=True),
+  SimpleRNN(20, activation='relu'),
+  Dense(1),
+# Lambda(lambda x: x * 100.0)
 ])
 
-#model.summary()
-#plot_model(model,show_shapes=True, to_file='model.png')
-
 sgd = SGD(lr=learning_rate)
-model.compile(loss=loss_function, optimizer=sgd, metrics=[loss_function])
 
-#log_dir="logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-#tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+model.compile(loss='mae', optimizer=SGD(lr=0.01), metrics=['mae'])
 
-
-history = model.fit(x_train, y_train, batch_size=batch, validation_split=0.2 ,epochs=number_epochs, shuffle=False, verbose=2) #entrenar la red #validar
-#print(history.history.keys())
+history = model.fit(x_train, y_train,validation_split=0.2, epochs=number_epochs, verbose=2) #entrenar la red #validar
 
 predictions = model.predict(x_test, verbose=0)
 #print(f"Predictions size = {predictions.shape}")
 #print(f"Actual_values size = {y_test.shape}")
-np.savetxt("Predictions/predictionsFC.csv", predictions, delimiter=";")
+np.savetxt("Predictions/predictionsRNN.csv", predictions, delimiter=";")
 
 #Mostrar gráfico con la evolución del coste para cada epoch
 epochs=np.arange(number_epochs)
@@ -79,7 +67,7 @@ axs[0].plot(epochs,history.history['loss'],epochs,history.history['val_loss'])
 axs[0].set_ylabel('loss')
 axs[0].set_xlabel('epoch')
 axs[0].legend(['train', 'validation'], loc='upper left')
-axs[1].plot(epochs[100:],history.history['loss'][100:],epochs[100:],history.history['val_loss'][100:])
+axs[1].plot(epochs[10:],history.history['loss'][10:],epochs[10:],history.history['val_loss'][10:])
 axs[1].set_ylabel('loss')
 axs[1].set_xlabel('epoch')
 axs[1].legend(['train', 'validation'], loc='upper left')
@@ -88,5 +76,3 @@ axs[1].legend(['train', 'validation'], loc='upper left')
 print(f"\nTiempo de ejecución = {(time.time() - start_time)} seconds")
 
 plt.show()
-
-#Mostrar gŕafico con la predicción y el valor real.
