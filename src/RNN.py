@@ -51,7 +51,7 @@ model = Sequential([
 
 sgd = SGD(lr=learning_rate)
 
-model.compile(loss='mae', optimizer=SGD(lr=0.01), metrics=['mae'])
+model.compile(loss='mae', optimizer=SGD(lr=0.0001), metrics=['mae'])
 
 history = model.fit(x_train, y_train,validation_split=0.2, epochs=number_epochs, verbose=2) #entrenar la red #validar
 

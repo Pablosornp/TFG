@@ -52,7 +52,6 @@ plt.legend(['Valor real', 'Predicción'], loc='upper left')
 plt.figure(figsize=(10, 6))
 plot_series(time_valid, y_test, start=0, end=1000)
 plot_series(time_valid, predictions, start=0, end=1000)
-
 plt.legend(['Valor real', 'Predicción'], loc='upper left')
 
 print(f"mae = {mae(y_test, predictions):.3f}")
