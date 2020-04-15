@@ -1,19 +1,15 @@
 import keras
-#from keras.models import Sequential
-#from keras.layers import Dense, Activation
+from keras.models import Sequential
+from keras.layers import Dense, Activation
 from keras.optimizers import SGD
 from keras.utils import plot_model
 
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import plot
+import matplotlib
+from matplotlib import pyplot as plt
 
 import numpy as np
 from numpy import genfromtxt
-from sklearn.preprocessing import StandardScaler
 
-
-import tensorflow as tf
-import datetime
 import time
 
 keras.backend.clear_session()
@@ -23,7 +19,7 @@ start_time = time.time()
 x_series = genfromtxt('Datos_prueba/x_train_1min_dh6_100000.csv', delimiter=';')
 y_series = genfromtxt('Datos_prueba/y_train_1min_dh6_100000.csv', delimiter=';')
 
-#print(x_series.shape)
+print(x_series.shape)
 #print(y_series.shape)
 
 total_time = x_series.shape[0]
@@ -41,16 +37,16 @@ y_test = y_series[split_time:]
 
 window_size=x_train.shape[1]
 
-number_epochs = 300
+number_epochs = 30
 learning_rate=0.001
 batch=100
-neurons_hidden_layer1=16
 
-loss_function='mae'
+
+loss_function='mse'
 
 model = Sequential([
     Dense(9, input_shape=[window_size], activation='relu'), #Numero de neuronas, tamaño datos entrada, activacion
-    Dense(neurons_hidden_layer1, activation='relu'),
+    Dense(16, activation='relu'),
     Dense(1, activation='relu')
 ])
 
@@ -64,7 +60,7 @@ model.compile(loss=loss_function, optimizer=sgd, metrics=[loss_function])
 #tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 
-history = model.fit(x_train, y_train, batch_size=batch, validation_split=0.2 ,epochs=number_epochs, shuffle=False, verbose=2) #entrenar la red #validar
+history = model.fit(x_train, y_train, batch_size=batch, validation_split=0.2 ,epochs=number_epochs, verbose=2) #entrenar la red #validar
 #print(history.history.keys())
 
 predictions = model.predict(x_test, verbose=0)
