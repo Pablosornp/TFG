@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['src\\RNN.py', 'src\\FullyConnectedNN.py', 'src\\Plotter.py', 'src\\DataSetLoader.py', 'src\\DataScaler.py', 'src\\Baseline.py']
+recent_files = ['src\\ModelTester.py', 'src\\ModelManager.py', 'src\\Plotter.py', 'src\\ManualTest.py', 'src\\DataSetLoader.py']
 
