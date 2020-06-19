@@ -79,7 +79,7 @@ model = Sequential([
 model_arq='60L -> 1D'
 
 model.compile(loss=loss_function, optimizer=optimizer, metrics=[precision])
-# history = model.fit(x_train, y_train, validation_split=0.05 ,batch_size=batch, epochs=number_epochs, verbose=2) #entrenar la red #validar
+history = model.fit(x_train, y_train, validation_split=0.05 ,batch_size=batch, epochs=number_epochs, verbose=2) #entrenar la red #validar
 
 
 #### Early stopping
@@ -88,44 +88,44 @@ model.compile(loss=loss_function, optimizer=optimizer, metrics=[precision])
 
 
 #### Lr schedule
-lr_schedule = LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch / 20))
-history = model.fit(x_train, y_train, batch_size=batch, validation_split=0.2 ,epochs=number_epochs, verbose=2, callbacks=[lr_schedule])
-#Mostrar gráfico del learning rate
-Plotter.plot_lr_schedule(history,path)
+# lr_schedule = LearningRateScheduler(lambda epoch: 1e-8 * 10**(epoch / 20))
+# history = model.fit(x_train, y_train, batch_size=batch, validation_split=0.2 ,epochs=number_epochs, verbose=2, callbacks=[lr_schedule])
+# #Mostrar gráfico del learning rate
+# Plotter.plot_lr_schedule(history,path)
 
 
-# # Gráfico con la evolución del coste para cada epoch
-# Plotter.plot_loss(history,path)
+# Gráfico con la evolución del coste para cada epoch
+Plotter.plot_loss(history,path)
 
-# ################# Predicción ################# 
-# predictions = model.predict(x_test, verbose=0)
+################# Predicción ################# 
+predictions = model.predict(x_test, verbose=0)
 
-# ### Desescalar los datos ##
-# x_train = ds.inverse_scale_data(x_train)
-# y_train = ds.inverse_scale_data(y_train)
+### Desescalar los datos ##
+x_train = ds.inverse_scale_data(x_train)
+y_train = ds.inverse_scale_data(y_train)
 
-# x_test = ds.inverse_scale_data(x_test)
-# predictions = ds.inverse_scale_data(predictions)
+x_test = ds.inverse_scale_data(x_test)
+predictions = ds.inverse_scale_data(predictions)
 
-# #Gráfica Predicción
-# Plotter.plot_prediction(y_test, predictions,path,start=100,end=1000)
-# Plotter.plot_prediction(y_test, predictions,path,start=600,end=800)
-# Plotter.plot_prediction(y_test, predictions,path,start=400,end=600)
+#Gráfica Predicción
+Plotter.plot_prediction(y_test, predictions,path,start=100,end=1000)
+Plotter.plot_prediction(y_test, predictions,path,start=600,end=800)
+Plotter.plot_prediction(y_test, predictions,path,start=400,end=600)
 
-# # Saving results in .txt file
-# fich_res = open(f"{path}/info_{test_name}.txt","w+")
-# fich_res.write(f"learning_rate={learning_rate}\n, number_epochs = {number_epochs}\n,batch={batch}\n,neuron={neuron}\n,model={model_arq}\n")
-# fich_res.write(f"\nPrecision (mae) = {Plotter.mae(y_test, predictions):.2f}\n")
-# fich_res.write(f"Overfitting = {Plotter.overfitting(history):.2f}%\n")
-# fich_res.close()
-# print(f"Overfitting = {Plotter.overfitting(history):.2f}%")
-# print(f"Precisión (mae) = {Plotter.mae(y_test, predictions):.2f}")
+# Saving results in .txt file
+fich_res = open(f"{path}/info_{test_name}.txt","w+")
+fich_res.write(f"learning_rate={learning_rate}\n, number_epochs = {number_epochs}\n,batch={batch}\n,neuron={neuron}\n,model={model_arq}\n")
+fich_res.write(f"\nPrecision (mae) = {Plotter.mae(y_test, predictions):.2f}\n")
+fich_res.write(f"Overfitting = {Plotter.overfitting(history):.2f}%\n")
+fich_res.close()
+print(f"Overfitting = {Plotter.overfitting(history):.2f}%")
+print(f"Precisión (mae) = {Plotter.mae(y_test, predictions):.2f}")
 
-# np.savetxt(f"{path}/{test_name}_pred.csv", predictions, delimiter=";")
-# np.savetxt(f"{path}/{test_name}_loss.csv", history.history['loss'], delimiter=";")
-# np.savetxt(f"{path}/y_test.csv", y_test, delimiter=";")
-# #Mostrar tiempo de ejecución
-# print(f"\nTiempo de ejecución = {(time.time() - start_time):.2f} seconds")
+np.savetxt(f"{path}/{test_name}_pred.csv", predictions, delimiter=";")
+np.savetxt(f"{path}/{test_name}_loss.csv", history.history['loss'], delimiter=";")
+np.savetxt(f"{path}/y_test.csv", y_test, delimiter=";")
+#Mostrar tiempo de ejecución
+print(f"\nTiempo de ejecución = {(time.time() - start_time):.2f} seconds")
 
 
 
