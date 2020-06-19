@@ -8,59 +8,42 @@ def plot_series(time, series, format="-", start=0, end=None):
     plt.ylabel("Value")
     plt.grid(True)
     
-def plot_loss(number_epochs,history,path):
+def plot_loss(history,path):
     plt.figure(figsize=(10, 6))
+    number_epochs=int(len(history.history['loss']))
     epochs=np.arange(number_epochs)
+    number_epochs = int(number_epochs)
     fig, axs = plt.subplots(2)
     axs[0].plot(epochs,history.history['loss'],epochs,history.history['val_loss'])
     axs[0].set_ylabel('loss')
     axs[0].set_xlabel('epoch')
     axs[0].legend(['train', 'validation'], loc='upper right')
-    axs[1].plot(epochs[100:],history.history['loss'][100:],epochs[100:],history.history['val_loss'][100:])
+    axs[1].plot(epochs[int(number_epochs/2):],history.history['loss'][int(number_epochs/2):],epochs[int(number_epochs/2):],history.history['val_loss'][int(number_epochs/2):])
     axs[1].set_ylabel('loss')
     axs[1].set_xlabel('epoch')
     axs[1].legend(['train', 'validation'], loc='upper right')
     plt.savefig(f"{path}/_loss.png")
     plt.show()
     
-def plot_comparative_loss(number_epochs,history,path):
-    rms = genfromtxt('Loss/rms.csv', delimiter=';')
-    adadelta = genfromtxt('Loss/adadelta.csv', delimiter=';')
-    plt.figure(figsize=(10, 6))
-    epochs=np.arange(number_epochs)
-    fig, axs = plt.subplots(2)
-    axs[0].plot(epochs,history.history['loss'])
-    axs[0].plot(epochs,rms)
-    axs[0].plot(epochs,adadelta)
-    axs[0].set_ylabel('loss')
-    axs[0].set_xlabel('epoch')
-    axs[0].legend(['Value 1', 'Value 2', 'Value 3'], loc='upper right')
-    axs[1].plot(epochs[100:],history.history['loss'][100:])
-    axs[1].plot(epochs[100:],rms[100:])
-    axs[1].plot(epochs[100:],adadelta[100:])
-    axs[1].set_ylabel('loss')
-    axs[1].set_xlabel('epoch')
-    axs[1].legend(['Value 1', 'Value 2', 'Value 3'], loc='upper right')
-    plt.savefig(f"{path}/comp_loss.png")
-    plt.show()
-    
-def plot_precision(number_epochs,history,path,start=0,end=None):
-    plt.figure(figsize=(10, 6))
+
+def plot_precision(history,measure,path,start=0,end=None):
+    plt.figure(figsize=(10, 3))
+    number_epochs=int(len(history.history['loss']))
     epochs=np.arange(number_epochs)
     plt.plot(epochs[start:end],history.history['mae'],'r')
     plt.plot(epochs[start:end],history.history['val_mae'],'b')
-    plt.xlabel("Time (min)")
+    plt.xlabel(f"Time ({measure}min)")
     plt.ylabel("MAE (W^2/m)")   
     plt.legend(['Precisión entrenamiento', 'Precisión validación'], loc='upper left')
     plt.savefig(f"{path}/prec.png")
     plt.show()
     
-def plot_prediction(y_test,prediction,path,start=0,end=None):
+def plot_prediction(y_test,prediction,measure,path,start=0,end=None):
     time_valid = np.arange(y_test.shape[0],dtype="float32")
     plt.figure(figsize=(10, 6))
     plt.plot(time_valid[start:end],y_test[start:end])
     plt.plot(time_valid[start:end],prediction[start:end])
-    plt.xlabel("Time (min)")
+    plt.xlabel(f"Time ({measure}min)")
     plt.ylabel("Irradiance(W^2/m)")   
     plt.legend(['Valor real', 'Predicción'], loc='upper left')
     plt.grid(True)
@@ -68,14 +51,14 @@ def plot_prediction(y_test,prediction,path,start=0,end=None):
     plt.savefig(f"{path}/pred_{start}_{end}.png")
     plt.show()
     
-def plot_comparative_prediction(y_test,prediction,path,start=0,end=None,color='tab:orange'):
+def plot_comparative_prediction(y_test,prediction,measure,path,start=0,end=None,color='tab:orange'):
     last = genfromtxt('Predictions/last_pred.csv', delimiter=';')
     time_valid = np.arange(y_test.shape[0],dtype="float32")
     plt.figure(figsize=(10, 6))
     plt.plot(time_valid[start:end],y_test[start:end])
     plt.plot(time_valid[start:end],last[start:end],'g')
     plt.plot(time_valid[start:end],prediction[start:end],color)
-    plt.xlabel("Time (min)")
+    plt.xlabel(f"Time ({measure}min)")
     plt.ylabel("Irradiance(W^2/m)")   
     plt.legend(['Valor real', 'Predicción anterior', 'Predicción'], loc='upper left')
     # plt.legend(['Valor real', 'tanh', 'relu'], loc='upper left')
@@ -83,9 +66,10 @@ def plot_comparative_prediction(y_test,prediction,path,start=0,end=None,color='t
     plt.savefig(f"{path}/comp_{start}_{end}.png")
     plt.show()
     
-def plot_lr_schedule(number_epochs,history,path):
+def plot_lr_schedule(history,path):
     #Mostrar gráfico del learning rate
-    lrs = 1e-8 * (10 ** (np.arange(number_epochs) / 30))
+    number_epochs=int(len(history.history['loss']))
+    lrs = 1e-8 * (10 ** (np.arange(number_epochs) / 20))
     plt.semilogx(lrs, history.history["loss"])
     plt.xlabel("Tasa de aprendizaje")
     plt.ylabel("Coste")
@@ -115,3 +99,47 @@ def overfitting(history):
     overfitting = (avr_val_loss-avr_loss)/avr_loss
     overfitting_perc = overfitting * 100
     return overfitting_perc
+
+def manual_pred_plot(forecast,timesteps,measure,nombre_prueba,start,end):
+    path_results='C:/Users/PABLO/Desktop/Results'
+    path_carpeta_pruebas=f'{path_results}/Pruebas {forecast}h {timesteps}ts {measure}min'
+    
+    prueba1=nombre_prueba
+    path_prueba1=f'{path_carpeta_pruebas}/{prueba1}'
+    prediction = np.genfromtxt(f'{path_prueba1}/{prueba1}_pred.csv', delimiter=';')
+    y_test = np.genfromtxt(f'{path_carpeta_pruebas}/y_test.csv', delimiter=';')
+    plot_prediction(y_test,prediction,measure,path_prueba1,start=start,end=end)
+
+def plot_comparative_loss(forecast,timesteps,measure,nombre_prueba1,nombre_prueba2):
+    path_results='C:/Users/PABLO/Desktop/Results'
+    path_carpeta_pruebas=f'{path_results}/Pruebas {forecast}h {timesteps}ts {measure}min'
+    
+    path_prueba1=f'{path_carpeta_pruebas}/{nombre_prueba1}'
+    prueba1_loss = np.genfromtxt(f'{path_prueba1}/{nombre_prueba1}_loss.csv', delimiter=';')
+    
+    path_prueba2=f'{path_carpeta_pruebas}/{nombre_prueba2}'
+    prueba2_loss = np.genfromtxt(f'{path_prueba2}/{nombre_prueba2}_loss.csv', delimiter=';')
+
+    plt.figure(figsize=(10, 6))
+    epochs = np.arange(prueba1_loss.shape[0],dtype="float32")
+    number_epochs = int(prueba1_loss.shape[0])
+    fig, axs = plt.subplots(2)
+    names = ['RED 18 (20 LSTM)', 'RED 19 (60 LSTM)']
+    axs[0].plot(epochs,prueba1_loss,color='g')
+    axs[0].plot(epochs,prueba2_loss,color='y')
+    axs[0].set_ylabel('loss')
+    axs[0].set_xlabel('epoch')
+    axs[0].legend(names, loc='upper right')
+    axs[1].plot(epochs[int(number_epochs/2):],prueba1_loss[int(number_epochs/2):],color='g')
+    axs[1].plot(epochs[int(number_epochs/2):],prueba2_loss[int(number_epochs/2):],color='y')
+    axs[1].set_ylabel('loss')
+    axs[1].set_xlabel('epoch')
+    axs[1].legend(names, loc='upper right')
+    plt.savefig(f"{path_prueba1}/comp_loss.png")
+    plt.savefig(f"{path_prueba2}/comp_loss.png")
+    plt.show()
+    
+
+if __name__ == '__main__':
+    manual_pred_plot(forecast=6,timesteps=60,measure=15,nombre_prueba='P36',start=180,end=250)
+    # plot_comparative_loss(forecast=1,timesteps=15,measure=1,nombre_prueba1="P42",nombre_prueba2="42_R60")

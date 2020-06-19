@@ -44,7 +44,7 @@ class ModelTester:
         units = int(layers.split(' ')[0])
         activation = self.table['Activation'][self.currentModel]
         out_activation = self.table['Output activation'][self.currentModel]
-        flattened = self.dataFormat[3]
+        flattened = self.dataFormat[4]
         if flattened is True:
             input_shape=[self.x_train.shape[1]]
         else:
@@ -59,12 +59,11 @@ class ModelTester:
         loss_function = self.table['Loss'][self.currentModel]
         self.model.compile(loss=loss_function, optimizer=optimizer, metrics=['mae'])
 
- 
     def trainModel(self):
         print("Training model...")
         batch = int(self.table['Batch size'][self.currentModel])
         number_epochs = int(self.table['Epochs'][self.currentModel])
-        history = self.model.fit(self.x_train, self.y_train, validation_split=0.05 ,batch_size=batch, epochs=number_epochs, verbose=0) #entrenar la red #validar
+        history = self.model.fit(self.x_train, self.y_train, validation_split=0.05 ,batch_size=batch, epochs=number_epochs, verbose=2) #entrenar la red #validar
         print("Training complete")
         return history
     
@@ -75,18 +74,20 @@ class ModelTester:
         return predictions
     
     def savePlotsAndResults(self,history,predictions,time):
+        (measure_frec, forecast, timesteps, standarized, flattened_data) = self.dataFormat     
         modelID = self.table['ID'][self.currentModel]
         newFolder(self.resultsPath)
         path=self.resultsPath+f"/{modelID}"
         newFolder(path)
-        number_epochs= self.table['Epochs'][self.currentModel]
         # Plots
-        pl.plot_loss(number_epochs,history,path)
-        pl.plot_precision(number_epochs,history,path)
-        pl.plot_prediction(self.y_test, predictions,path,start=100,end=1000)
-        pl.plot_prediction(self.y_test, predictions,path,start=600,end=800)
-        pl.plot_prediction(self.y_test, predictions,path,start=400,end=600)
-        # Results
+        pl.plot_loss(history,path)
+        pl.plot_precision(history,measure_frec,path)
+        start=130
+        day = int(900/measure_frec)
+        pl.plot_prediction(self.y_test, predictions, measure_frec,path,start=start,end=start+2*day)
+        pl.plot_prediction(self.y_test, predictions, measure_frec,path,start=int(start+day*0.6),end=int(start+day*0.8))
+        pl.plot_prediction(self.y_test, predictions,measure_frec,path,start=int(start+day*0.4),end=int(start+day*0.7))
+        #Results
         np.savetxt(f"{path}/{modelID}_pred.csv", predictions, delimiter=";")
         np.savetxt(f"{path}/{modelID}_loss.csv", history.history['loss'], delimiter=";")
         overfitting = pl.overfitting(history)
@@ -103,6 +104,7 @@ class ModelTester:
         print("Results are ready")
         
     def saveBaselineResults(self):
+        (measure_frec, forecast, timesteps, standarized, flattened_data) = self.dataFormat     
         modelID = self.table['ID'][self.currentModel]
         newFolder(self.resultsPath)
         path=self.resultsPath+f"/{modelID}"
@@ -111,10 +113,13 @@ class ModelTester:
         predictions = dsl.generateTestSet(predictions)
         predictions = np.expand_dims(predictions, axis=1)
         # Plots
-        pl.plot_prediction(self.y_test, predictions,path,start=100,end=1000)
-        pl.plot_prediction(self.y_test, predictions,path,start=600,end=800)
-        pl.plot_prediction(self.y_test, predictions,path,start=400,end=600)
-        # Results
+        start=130
+        day = int(900/measure_frec)
+        pl.plot_prediction(self.y_test, predictions, measure_frec,path,start=start,end=start+day)
+        pl.plot_prediction(self.y_test, predictions, measure_frec,path,start=start,end=start+4*day)
+        pl.plot_prediction(self.y_test, predictions, measure_frec,path,start=int(start+day*0.6),end=int(start+day*0.8))
+        pl.plot_prediction(self.y_test, predictions,measure_frec,path,start=int(start+day*0.4),end=int(start+day*0.7))
+       # Results
         mae = pl.mae(self.y_test, predictions)
         self.table['MAE'][self.currentModel] = mae
         # Saving into txt file
@@ -128,6 +133,7 @@ class ModelTester:
         return self.table['Architecture'][self.currentModel] in ('Naive foracast','Weighted av. forecast')
     
     def readDataFormat(self):
+        measure_frec = int(self.table['Measure'][self.currentModel]) 
         forecast = int(self.table['Forecast'][self.currentModel])
         timestep = int(self.table['Timestep'][self.currentModel])
         standarized = self.table['Standarized'][self.currentModel]
@@ -140,20 +146,19 @@ class ModelTester:
             flattened_data=True
         else: 
             flattened_data=False
-        return (forecast, timestep, standarized, flattened_data)
+        return (measure_frec, forecast, timestep, standarized, flattened_data)
     
     def loadData(self):
-        (forecast, timesteps, standarized, flattened_data) = self.dataFormat     
+        (measure_frec, forecast, timesteps, standarized, flattened_data) = self.dataFormat     
         #Loading dataset based on the format
-        sensors_data = dsl.get_sensors_data(standarized)
-        moving_avg_pred = dsl.moving_average_forecast(sensors_data,timesteps,forecast)
+        sensors_data = dsl.get_sensors_data(standarized, measure_frec)
+        moving_avg_pred = dsl.moving_average_forecast(sensors_data,measure_frec,timesteps,forecast)
         np.savetxt("Predictions/moving_average_prediction.csv", moving_avg_pred, delimiter=";")
    
-        x_series,y_series = dsl.window_data(sensors_data,timesteps,forecast)
+        x_series,y_series = dsl.window_data(sensors_data,measure_frec,timesteps,forecast)
         if flattened_data:
             x_series = dsl.flatten_windowed_data(x_series)
         (self.x_train, self.y_train),(self.x_test, self.y_test) = dsl.generateTrainTestSet(x_series,y_series,split=9/10)
-
         
     def scaleData(self):
         #Scaling data
@@ -162,7 +167,7 @@ class ModelTester:
         self.y_train = self.ds.scale_data(self.y_train)
         self.x_test = self.ds.scale_data(self.x_test)
         
-    def inverseScaleData(self):
+    def inverseScaleData(self): 
         self.x_train = self.ds.inverse_scale_data(self.x_train)
         self.y_train = self.ds.inverse_scale_data(self.y_train)
         self.x_test = self.ds.inverse_scale_data(self.x_test)
@@ -181,7 +186,7 @@ if __name__ == '__main__':
     pd.set_option('mode.chained_assignment', None)
     
     global_start_time = time.time()
-    mt = ModelTester("Pruebas 3h 30ts")
+    mt = ModelTester("Pruebas 12h 60ts 15min")
     number_of_models = mt.table['ID'].shape[0]
     while(mt.currentModel != number_of_models): 
         print(f"################ {mt.currentModel}: PRUEBA {mt.table['ID'][mt.currentModel]} ###############")

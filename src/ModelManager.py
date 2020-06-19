@@ -136,3 +136,16 @@ def lstm1(units, neuron, output_neuron, input_shape, regularization):
     model.add(Dense(1, activation=output_neuron))
     return model
 
+def lstm2(units, neuron, output_neuron, input_shape, regularization):
+    # 20 (L) -> 20(L rd(0,3)) -> d(0.3) -> 1(D)
+    model = Sequential()
+    model.add(LSTM(units, activation=neuron,input_shape=input_shape ,return_sequences=True))
+    model.add(LSTM(units, activation=neuron))
+    model.add(Dense(17, activation=output_neuron))
+    if regularization:
+        model.add(Dropout(dropout_value))
+        print(f"# {units} (L) -> {units}(L) -> 17(D) -> d(0.3) -> 1(D)")
+    else:       
+        print(f"# {units} (L) -> {units}(L) -> 17(D) -> 1(D)")      
+    model.add(Dense(1, activation=output_neuron))
+    return model
